@@ -62,9 +62,10 @@ public class App {
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
-                            *
+                            ProductName
                         FROM
-                            Products;
+                            products
+                       
                         """
                 );
 
@@ -91,7 +92,7 @@ public class App {
         while (results.next()) {
 
             //loop over each column in the rown and display the data
-            for (int i = 1; i < columnCount; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 //gets the current colum name
                 String columnName = metaData.getColumnName(i);
                 //get the current column value
