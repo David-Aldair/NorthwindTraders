@@ -5,12 +5,14 @@ import java.util.Scanner;
 
 public class App {
 
+    //scanner
+    public static Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
 
 
         //did we pass in a username and password
         //if not, the application must die
-        if(args.length != 2){
+        if (args.length != 2) {
             //display a message to the user
             System.out.println("Application needs two args to run: A username and a password for the db");
             //exit the app due to failure because we dont have a username and password from the command line
@@ -21,29 +23,28 @@ public class App {
         String username = args[0];
         String password = args[1];
 
-        //scanner
-        Scanner scanner = new Scanner(System.in);
+        //create the connection (kinda like opening mySQL Workbench)
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/northwind", username, password);
 
-
-
-            //create the connection (kinda like opening mySQL Workbench)
-        try{
-                Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/northwind", username, password);
-
-            while(true){
+            while (true) {
                 System.out.println("""
                         What do you want to do?
-                            1)Display Products
-                            2)Display Customers
+                            1)Display All Products
+                            2)Display All Customers
+                            3)Display All Categories
                             0)Exit
                         """);
 
-                switch(scanner.nextInt()){
+                switch (scanner.nextInt()) {
                     case 1:
                         displayAllProducts(connection);
                         break;
                     case 2:
                         displayAllCustomers(connection);
+                        break;
+                    case 3:
+                        displayAllCategories(connection);
                         break;
                     case 0:
                         System.out.println("Goodbye!");
@@ -53,7 +54,7 @@ public class App {
                 }
             }
 
-        }catch (SQLException e){
+        } catch (SQLException e) {
 
             System.out.println("Something went wrong" + e);
             System.exit(1);
@@ -72,7 +73,7 @@ public class App {
                             UnitsInStock
                         FROM
                             products
-                       
+                        
                         """
                 );
 
@@ -88,7 +89,7 @@ public class App {
         }
     }
 
-    public static void displayAllCustomers(Connection connection){
+    public static void displayAllCustomers(Connection connection) {
 
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement("""
@@ -113,7 +114,58 @@ public class App {
             System.out.println("Could not get all the customers" + e);
             System.exit(1);
         }
+    }
 
+    public static void displayAllCategories(Connection connection) {
+
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement("""
+                        SELECT
+                            CategoryID,
+                            CategoryName
+                        FROM
+                            Categories
+                        ORDER BY
+                            CategoryID;
+                        """
+                )) {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                printAllCategories(resultSet);
+            }
+        } catch (SQLException e) {
+            System.out.println("Could not get all the categories" + e);
+            System.exit(1);
+        }
+
+        System.out.println("What category would you like?");
+        int categoryNum = scanner.nextInt();
+        scanner.nextLine();
+
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement("""
+                        SELECT
+                            ProductID,
+                            ProductName,
+                            UnitPrice,
+                            UnitsInStock
+                        FROM
+                            products
+                        WHERE
+                            CategoryID = ?
+                        
+                        """
+                )) {
+
+            preparedStatement.setInt(1, categoryNum);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            printAllProducts(resultSet);
+
+        } catch (SQLException e) {
+            System.out.println("Could not get all the products" + e);
+            System.exit(1);
+        }
     }
 
     //this method will be used in the displayMethods to actually print the results to the screen
@@ -132,6 +184,7 @@ public class App {
                     id, name, price, stock);
         }
     }
+
     public static void printAllCustomers(ResultSet results) throws SQLException {
         System.out.printf("%-30s %-35s %-20s %-20s %-10s\n",
                 "Contact Name", "Company Name", "City", "Country", "Phone");
@@ -148,4 +201,19 @@ public class App {
                     conName, comName, City, Country, phone);
         }
     }
+    public static void printAllCategories(ResultSet results) throws SQLException {
+
+        // Print header row
+        System.out.printf("%-15s %-30s\n", "Category ID", "Category Name");
+        System.out.println("--------------------------------------------------------");
+
+        // Print each row returned from the query
+        while (results.next()) {
+            int categoryId = results.getInt("CategoryID");
+            String categoryName = results.getString("CategoryName");
+
+            System.out.printf("%-15d %-30s\n", categoryId, categoryName);
+        }
+    }
+
 }
