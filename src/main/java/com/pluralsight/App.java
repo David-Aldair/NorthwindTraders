@@ -62,7 +62,10 @@ public class App {
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
-                            ProductName
+                            ProductID,
+                            ProductName,
+                            UnitPrice,
+                            UnitsInStock
                         FROM
                             products
                        
@@ -83,26 +86,19 @@ public class App {
 
     //this method will be used in the displayMethods to actually print the results to the screen
     public static void printResults(ResultSet results) throws SQLException {
-        //get the meta data so we have access to the field names
-        ResultSetMetaData metaData = results.getMetaData();
-        //get the number of rows returned
-        int columnCount = metaData.getColumnCount();
+        System.out.printf("%-5s %-35s %-10s %-10s\n",
+                "ID", "Name", "Price", "Stock");
+        System.out.println("----- ----------------------------------- ---------- -------------");
 
-        //this is looping over all the results from the DB
         while (results.next()) {
+            int id = results.getInt("ProductID");
+            String name = results.getString("ProductName");
+            double price = results.getDouble("UnitPrice");
+            int stock = results.getInt("UnitsInStock");
 
-            //loop over each column in the rown and display the data
-            for (int i = 1; i <= columnCount; i++) {
-                //gets the current colum name
-                String columnName = metaData.getColumnName(i);
-                //get the current column value
-                String value = results.getString(i);
-                //print out the column name and column value
-                System.out.println(columnName + ": " + value + " ");
-            }
+            System.out.printf("%-5d %-35s %-10.2f %-10d\n",
+                    id, name, price, stock);
 
-            //print an empty line to make the results prettier
-            System.out.println();
 
         }
     }
