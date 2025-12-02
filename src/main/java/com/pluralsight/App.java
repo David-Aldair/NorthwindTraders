@@ -34,12 +34,16 @@ public class App {
                 System.out.println("""
                         What do you want to do?
                             1)Display Products
+                            2)Display Customers
                             0)Exit
                         """);
 
                 switch(scanner.nextInt()){
                     case 1:
-                        displayProducts(connection);
+                        displayAllProducts(connection);
+                        break;
+                    case 2:
+                        displayAllCustomers(connection);
                         break;
                     case 0:
                         System.out.println("Goodbye!");
@@ -56,7 +60,7 @@ public class App {
         }
     }
 
-    public static void displayProducts(Connection connection) {
+    public static void displayAllProducts(Connection connection) {
 
 
         try (
@@ -75,7 +79,7 @@ public class App {
                 ResultSet resultSet = preparedStatement.executeQuery();
         ) {
 
-            printResults(resultSet);
+            printAllProducts(resultSet);
 
 
         } catch (SQLException e) {
@@ -84,8 +88,36 @@ public class App {
         }
     }
 
+    public static void displayAllCustomers(Connection connection){
+
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement("""
+                        SELECT
+                            ContactName,
+                            CompanyName,
+                            City,
+                            Country,
+                            Phone
+                        FROM
+                            Customers
+                        """
+                );
+
+                ResultSet resultSet = preparedStatement.executeQuery();
+        ) {
+
+            printAllCustomers(resultSet);
+
+
+        } catch (SQLException e) {
+            System.out.println("Could not get all the customers" + e);
+            System.exit(1);
+        }
+
+    }
+
     //this method will be used in the displayMethods to actually print the results to the screen
-    public static void printResults(ResultSet results) throws SQLException {
+    public static void printAllProducts(ResultSet results) throws SQLException {
         System.out.printf("%-5s %-35s %-10s %-10s\n",
                 "ID", "Name", "Price", "Stock");
         System.out.println("----- ----------------------------------- ---------- -------------");
@@ -98,8 +130,22 @@ public class App {
 
             System.out.printf("%-5d %-35s %-10.2f %-10d\n",
                     id, name, price, stock);
+        }
+    }
+    public static void printAllCustomers(ResultSet results) throws SQLException {
+        System.out.printf("%-30s %-35s %-20s %-20s %-10s\n",
+                "Contact Name", "Company Name", "City", "Country", "Phone");
+        System.out.println("---------------------------------------------------------------------------------------------------------------------");
 
+        while (results.next()) {
+            String conName = results.getString("ContactName");
+            String comName = results.getString("CompanyName");
+            String City = results.getString("City");
+            String Country = results.getString("Country");
+            String phone = results.getString("Phone");
 
+            System.out.printf("%-30s %-35s %-20s %-20s %-10s\n",
+                    conName, comName, City, Country, phone);
         }
     }
 }
