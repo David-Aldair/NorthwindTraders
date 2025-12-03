@@ -1,5 +1,7 @@
 package com.pluralsight;
 
+import org.apache.commons.dbcp2.BasicDataSource;
+
 import java.sql.*;
 import java.util.Scanner;
 
@@ -15,7 +17,7 @@ public class App {
         if (args.length != 2) {
             //display a message to the user
             System.out.println("Application needs two args to run: A username and a password for the db");
-            //exit the app due to failure because we dont have a username and password from the command line
+            //exit the app due to failure because we don't have a username and password from the command line
             System.exit(1);
         }
 
@@ -23,9 +25,18 @@ public class App {
         String username = args[0];
         String password = args[1];
 
+        //get the connection from the datasource
         //create the connection (kinda like opening mySQL Workbench)
-        try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/northwind", username, password);
+        try (
+
+            //create the basic datasource
+            BasicDataSource dataSource = new BasicDataSource()
+            ){
+
+            //setting it's configuration
+            dataSource.setUrl("jdbc:mysql://localhost:3306/northwind");
+            dataSource.setUsername(username);
+            dataSource.setPassword(password);
 
             while (true) {
                 System.out.println("""
@@ -38,13 +49,13 @@ public class App {
 
                 switch (scanner.nextInt()) {
                     case 1:
-                        displayAllProducts(connection);
+                        displayAllProducts(dataSource);
                         break;
                     case 2:
-                        displayAllCustomers(connection);
+                        displayAllCustomers(dataSource);
                         break;
                     case 3:
-                        displayAllCategories(connection);
+                        displayAllCategories(dataSource);
                         break;
                     case 0:
                         System.out.println("Goodbye!");
@@ -61,10 +72,16 @@ public class App {
         }
     }
 
-    public static void displayAllProducts(Connection connection) {
+    public static void displayAllProducts(BasicDataSource dataSource) {
 
 
+        //we have to try to run a query and get the results with a prepared statement
         try (
+
+                //get a connection from the data pool
+                Connection connection = dataSource.getConnection();
+
+                //create the prepared statement using the passed connection
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
                             ProductID,
@@ -77,7 +94,7 @@ public class App {
                         """
                 );
 
-                ResultSet resultSet = preparedStatement.executeQuery();
+                ResultSet resultSet = preparedStatement.executeQuery()
         ) {
 
             printAllProducts(resultSet);
@@ -89,9 +106,16 @@ public class App {
         }
     }
 
-    public static void displayAllCustomers(Connection connection) {
+    public static void displayAllCustomers(BasicDataSource dataSource) {
 
+
+        //we have to try to run a query and get the results with a prepared statement
         try (
+
+                //get a connection from the data pool
+                Connection connection = dataSource.getConnection();
+
+                //create the prepared statement using the passed connection
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
                             ContactName,
@@ -104,7 +128,7 @@ public class App {
                         """
                 );
 
-                ResultSet resultSet = preparedStatement.executeQuery();
+                ResultSet resultSet = preparedStatement.executeQuery()
         ) {
 
             printAllCustomers(resultSet);
@@ -116,9 +140,16 @@ public class App {
         }
     }
 
-    public static void displayAllCategories(Connection connection) {
+    public static void displayAllCategories(BasicDataSource dataSource) {
 
+
+        //we have to try to run a query and get the results with a prepared statement
         try (
+
+                //get a connection from the data pool
+                Connection connection = dataSource.getConnection();
+
+                //create the prepared statement using the passed connection
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
                             CategoryID,
@@ -142,6 +173,11 @@ public class App {
         scanner.nextLine();
 
         try (
+
+                //get a connection from the data pool
+                Connection connection = dataSource.getConnection();
+
+                //create the prepared statement using the passed connection
                 PreparedStatement preparedStatement = connection.prepareStatement("""
                         SELECT
                             ProductID,
@@ -152,7 +188,6 @@ public class App {
                             products
                         WHERE
                             CategoryID = ?
-                        
                         """
                 )) {
 
@@ -206,7 +241,6 @@ public class App {
         // Print header row
         System.out.printf("%-15s %-30s\n", "Category ID", "Category Name");
         System.out.println("--------------------------------------------------------");
-
         // Print each row returned from the query
         while (results.next()) {
             int categoryId = results.getInt("CategoryID");
